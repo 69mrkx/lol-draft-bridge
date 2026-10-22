@@ -1,26 +1,50 @@
 # Dependencies
 node_modules/
 package-lock.json.backup
+.pnp
+.pnp.js
 
 # Production build outputs
 dist/
+build/
+out/
 *.tsbuildinfo
 
-# Local environment & credentials
+# Executables & Binaries (generated locally or via pkg)
+*.exe
+*.dll
+*.node
+*.dylib
+*.so
+LoLDraftBridge.exe
+lol-draft-bridge.exe
+
+# Local environment & secrets
 .env
+.env.*
 .env.local
 .env.*.local
+!.env.example
 
-# Logs
+# League of Legends local test lockfiles
+lockfile
+
+# Logs & Diagnostics
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# System & IDE files
+# System files & OS artifacts
 .DS_Store
 Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# IDE & Editor files
 .idea/
 .vscode/
 *.suo
@@ -28,6 +52,21 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+*.sublime-project
+*.sublime-workspace
 
-# Executable builds (if generated locally)
-LoLDraftBridge.exe
+# Temporary & Scratch test files
+scratch*
+test_*.js
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.patch
+
+# Compressed archives
+*.zip
+*.tar.gz
+*.7z
+*.rar
