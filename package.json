@@ -1,0 +1,49 @@
+{
+  "name": "lol-draft-bridge",
+  "version": "1.0.0",
+  "description": "Local Network (LAN) Bridge for League of Legends LCU Client API - Champ Select & Matchmaking sync for mobile clients with Windows System Tray support",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
+  "pkg": {
+    "assets": [
+      "assets/**/*",
+      "node_modules/systray2/traybin/**/*"
+    ],
+    "targets": [
+      "node20-win-x64"
+    ],
+    "outputPath": "./"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:no-tray": "node dist/index.js --no-tray",
+    "dev": "tsx watch src/index.ts",
+    "package": "npm run build && pkg dist/index.js --target node20-win-x64 --output LoLDraftBridge.exe"
+  },
+  "keywords": [
+    "league-of-legends",
+    "lcu",
+    "champ-select",
+    "websocket",
+    "bridge",
+    "lan",
+    "system-tray",
+    "windows",
+    "mobile-remote"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "systray2": "^2.1.4",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "@yao-pkg/pkg": "^6.23.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
