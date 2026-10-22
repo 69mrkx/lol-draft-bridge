@@ -17,6 +17,7 @@ export class TrayManager {
   private systray: SysTray | null = null;
   private options: TrayManagerOptions;
   private isDestroyed: boolean = false;
+  private isReady: boolean = false;
 
   private itemTitle: MenuItem;
   private itemLan: MenuItem;
@@ -93,7 +94,16 @@ export class TrayManager {
           items: menuItems,
         },
         debug: false,
-        copyDir: true,
+        copyDir: false,
+      });
+
+      this.systray.onError((err) => {
+        // Prevent unhandled errors if tray process terminates
+        this.isReady = false;
+      });
+
+      this.systray.onExit(() => {
+        this.isReady = false;
       });
 
       this.systray.onClick((action) => {
@@ -106,15 +116,33 @@ export class TrayManager {
         }
       });
 
+      // Wait until the underlying native process is ready
+      await this.systray.ready();
+      this.isReady = true;
+
+      // Setup listeners for live status updates
       this.setupLcuListeners();
-    } catch (err) {
-      console.warn('[Tray] System Tray non disponibile in questo ambiente. Continuazione in modalità console.');
+
+      // Apply initial state if LCU is already connected
+      if (this.options.lcuClient.isConnected && this.options.lcuClient.currentCredentials) {
+        this.updateItem(
+          this.itemLcuStatus,
+          `⚡ LCU: Connesso (Porta ${this.options.lcuClient.currentCredentials.port})`
+        );
+      }
+      if (this.options.lcuClient.currentGameflow !== 'None') {
+        this.updateItem(this.itemPhase, `🎯 Fase: ${this.options.lcuClient.currentGameflow}`);
+      }
+    } catch (err: any) {
+      this.isReady = false;
+      console.warn('[Tray] System Tray non inizializzato o non disponibile in questo ambiente. Continuazione in console.');
     }
   }
 
   public destroy(): void {
     if (this.isDestroyed) return;
     this.isDestroyed = true;
+    this.isReady = false;
 
     if (this.systray) {
       try {
@@ -155,15 +183,21 @@ export class TrayManager {
     });
   }
 
-  private updateItem(item: MenuItem, newTitle: string): void {
-    if (!this.systray || this.isDestroyed) return;
+  private async updateItem(item: MenuItem, newTitle: string): Promise<void> {
     item.title = newTitle;
+    if (!this.systray || this.isDestroyed || !this.isReady) return;
+
     try {
-      this.systray.sendAction({
+      const proc = (this.systray as any)._process;
+      if (!proc || !proc.stdin || proc.killed) return;
+
+      await this.systray.sendAction({
         type: 'update-item',
         item,
       });
-    } catch {}
+    } catch {
+      // Gracefully ignore pipe errors
+    }
   }
 
   private openDashboardInBrowser(): void {
