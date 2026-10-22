@@ -6,11 +6,11 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**LoL Draft Bridge** is a lightweight, high-performance local network (LAN) bridge server written in Node.js and TypeScript. It intercepts communication with the League of Legends Client Update (LCU) API and exposes real-time state synchronization and remote control over WebSocket and REST.
+**LoL Draft Bridge** is a lightweight, high-performance local network (LAN) bridge server written in Node.js and TypeScript. It communicates with the League of Legends Client Update (LCU) API and exposes real-time state synchronization and remote control over WebSocket and REST.
 
-Designed for mobile companion applications (iOS / Android), it lets players accept queue pop-ups, monitor champion draft phases, hover champion intents, and lock in picks and bans directly from their smartphone or tablet anywhere on their local Wi-Fi.
+Designed for mobile companion applications (iOS / Android), it enables players to accept queue pop-ups, monitor champion draft phases, hover champion intents, and lock in picks and bans directly from their smartphone or tablet anywhere on their local Wi-Fi.
 
-Includes native **Windows System Tray** support for quiet background execution and effortless shutdown.
+Includes native **Windows System Tray** integration for quiet background execution and easy shutdown.
 
 ---
 
