@@ -53,16 +53,27 @@ export class TrayManager {
       enabled: false,
     };
 
+    (this.itemLan as any).click = () => {
+      this.openDashboardInBrowser();
+    };
+
     this.itemOpenDashboard = {
       title: '🖥️ Apri Web Dashboard',
       tooltip: 'Open Web Dashboard in default browser',
       enabled: true,
+    };
+    (this.itemOpenDashboard as any).click = () => {
+      this.openDashboardInBrowser();
     };
 
     this.itemExit = {
       title: '❌ Spegni Bridge (Exit)',
       tooltip: 'Stop server and exit',
       enabled: true,
+    };
+    (this.itemExit as any).click = () => {
+      console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
+      this.options.onExit();
     };
   }
 
@@ -97,6 +108,10 @@ export class TrayManager {
         copyDir: false,
       });
 
+      // Wait until the underlying native process is ready before attaching process listeners
+      await this.systray.ready();
+      this.isReady = true;
+
       this.systray.onError((err) => {
         // Prevent unhandled errors if tray process terminates
         this.isReady = false;
@@ -106,19 +121,52 @@ export class TrayManager {
         this.isReady = false;
       });
 
-      this.systray.onClick((action) => {
+      await this.systray.onClick((action) => {
         if (this.isDestroyed) return;
 
-        if (action.item.title === this.itemOpenDashboard.title || action.item.title === this.itemLan.title) {
+        // 1. Check direct click handler attached to item
+        if (action.item && typeof (action.item as any).click === 'function') {
+          (action.item as any).click();
+          return;
+        }
+
+        // 2. Check by object reference or internal ID
+        if (
+          action.item === this.itemOpenDashboard ||
+          action.item === this.itemLan ||
+          (action.item as any)?.__id === (this.itemOpenDashboard as any)?.__id ||
+          (action.item as any)?.__id === (this.itemLan as any)?.__id
+        ) {
           this.openDashboardInBrowser();
-        } else if (action.item.title === this.itemExit.title) {
+          return;
+        }
+
+        if (
+          action.item === this.itemExit ||
+          (action.item as any)?.__id === (this.itemExit as any)?.__id
+        ) {
+          console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
+          this.options.onExit();
+          return;
+        }
+
+        // 3. Fallback check by title
+        const clickedTitle = action.item?.title || '';
+        if (
+          clickedTitle === this.itemOpenDashboard.title ||
+          clickedTitle === this.itemLan.title ||
+          clickedTitle.includes('Apri Web Dashboard') ||
+          clickedTitle.includes('LAN:')
+        ) {
+          this.openDashboardInBrowser();
+        } else if (
+          clickedTitle === this.itemExit.title ||
+          clickedTitle.includes('Spegni Bridge')
+        ) {
+          console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
           this.options.onExit();
         }
       });
-
-      // Wait until the underlying native process is ready
-      await this.systray.ready();
-      this.isReady = true;
 
       // Setup listeners for live status updates
       this.setupLcuListeners();
@@ -135,7 +183,7 @@ export class TrayManager {
       }
     } catch (err: any) {
       this.isReady = false;
-      console.warn('[Tray] System Tray non inizializzato o non disponibile in questo ambiente. Continuazione in console.');
+      console.warn('[Tray] System Tray non inizializzato o non disponibile in questo ambiente. Continuazione in console.', err?.message || err);
     }
   }
 
@@ -202,7 +250,12 @@ export class TrayManager {
 
   private openDashboardInBrowser(): void {
     const url = `http://localhost:${this.options.port}`;
-    const cmd = process.platform === 'win32' ? `start ${url}` : `open ${url}`;
-    exec(cmd, () => {});
+    console.log(`\x1b[36m[Tray]\x1b[0m Apertura Web Dashboard nel browser predefinito: ${url}`);
+    const cmd = process.platform === 'win32' ? `start "" "${url}"` : `open "${url}"`;
+    exec(cmd, (err) => {
+      if (err) {
+        console.error('\x1b[31m[Tray]\x1b[0m Impossibile aprire il browser:', err.message);
+      }
+    });
   }
 }

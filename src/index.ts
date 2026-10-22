@@ -5,6 +5,8 @@ import { TrayManager } from './tray/tray-manager.js';
 import { getLocalIpAddresses, getPrimaryLocalIp } from './utils/network.js';
 
 async function bootstrap() {
+  process.title = 'lol-draft-bridge';
+
   const primaryIp = getPrimaryLocalIp();
   const allIps = getLocalIpAddresses();
   const enableTray = process.platform === 'win32' && !process.argv.includes('--no-tray');
