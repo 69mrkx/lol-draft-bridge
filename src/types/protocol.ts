@@ -31,6 +31,9 @@ export type InboundMessageType =
   | 'ACTION_PICK'
   | 'ACTION_BAN'
   | 'ACTION_INTENT'
+  | 'ACTION_SPELLS'
+  | 'GET_RUNE_PAGES'
+  | 'SET_RUNE_PAGE'
   | 'ACTION_CUSTOM';
 
 export interface InboundBaseMessage {
@@ -79,6 +82,27 @@ export interface InboundActionIntentMessage extends InboundBaseMessage {
   };
 }
 
+export interface InboundActionSpellsMessage extends InboundBaseMessage {
+  type: 'ACTION_SPELLS';
+  payload: {
+    spell1Id: number;
+    spell2Id: number;
+  };
+}
+
+export interface InboundGetRunePagesMessage extends InboundBaseMessage {
+  type: 'GET_RUNE_PAGES';
+  payload?: Record<string, any>;
+}
+
+export interface InboundSetRunePageMessage extends InboundBaseMessage {
+  type: 'SET_RUNE_PAGE';
+  payload: {
+    pageId?: number;
+    id?: number;
+  };
+}
+
 export interface InboundActionCustomMessage extends InboundBaseMessage {
   type: 'ACTION_CUSTOM';
   payload: {
@@ -96,6 +120,9 @@ export type InboundMessage =
   | InboundActionPickMessage
   | InboundActionBanMessage
   | InboundActionIntentMessage
+  | InboundActionSpellsMessage
+  | InboundGetRunePagesMessage
+  | InboundSetRunePageMessage
   | InboundActionCustomMessage;
 
 /**

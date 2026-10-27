@@ -9,7 +9,7 @@ if not exist "dist\index.js" (
     call npm.cmd run build
 )
 
-:: Ensure lol-draft-bridge.exe launcher exists for easy identification in Task Manager (Gestione Attivita)
+:: Ensure lol-draft-bridge.exe launcher exists for easy identification in Task Manager
 if not exist "lol-draft-bridge.exe" (
     node scripts\ensure-exe.cjs >nul 2>&1
 )

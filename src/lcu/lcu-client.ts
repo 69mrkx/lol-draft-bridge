@@ -6,6 +6,7 @@ import {
   ChampSelectSession,
   GameflowPhase,
   LcuCredentials,
+  LcuRunePage,
   LcuWsEventPayload,
   ReadyCheckSession,
 } from '../types/lcu.js';
@@ -429,5 +430,29 @@ export class LcuClient extends EventEmitter {
     return this.request('PATCH', '/lol-champ-select/v1/session/my-selection', {
       championId,
     });
+  }
+
+  /**
+   * Updates summoner spells for local player in Champ Select.
+   */
+  public async setSummonerSpells(spell1Id: number, spell2Id: number): Promise<any> {
+    return this.request('PATCH', '/lol-champ-select/v1/session/my-selection', {
+      spell1Id: Number(spell1Id),
+      spell2Id: Number(spell2Id),
+    });
+  }
+
+  /**
+   * Retrieves all rune pages from LCU.
+   */
+  public async getRunePages(): Promise<LcuRunePage[]> {
+    return this.request<LcuRunePage[]>('GET', '/lol-perks/v1/pages');
+  }
+
+  /**
+   * Sets the active rune page by pageId.
+   */
+  public async setCurrentRunePage(pageId: number): Promise<any> {
+    return this.request('PUT', '/lol-perks/v1/currentpage', Number(pageId));
   }
 }

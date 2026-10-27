@@ -383,6 +383,56 @@ export class BridgeServer {
           break;
         }
 
+        case 'ACTION_SPELLS': {
+          const { spell1Id, spell2Id } = msg.payload || {};
+          if (
+            spell1Id === undefined ||
+            spell2Id === undefined ||
+            isNaN(Number(spell1Id)) ||
+            isNaN(Number(spell2Id))
+          ) {
+            throw new Error('Both spell1Id and spell2Id are required and must be numbers for ACTION_SPELLS');
+          }
+          const result = await this.lcuClient.setSummonerSpells(Number(spell1Id), Number(spell2Id));
+          const resMsg: OutboundActionResultMessage = {
+            type: 'ACTION_RESULT',
+            timestamp: Date.now(),
+            replyTo: replyId,
+            payload: { success: true, action: 'ACTION_SPELLS', data: result },
+          };
+          this.sendTo(ws, resMsg);
+          break;
+        }
+
+        case 'GET_RUNE_PAGES': {
+          const pages = await this.lcuClient.getRunePages();
+          const resMsg: OutboundActionResultMessage = {
+            type: 'ACTION_RESULT',
+            timestamp: Date.now(),
+            replyTo: replyId,
+            payload: { success: true, action: 'GET_RUNE_PAGES', data: pages },
+          };
+          this.sendTo(ws, resMsg);
+          break;
+        }
+
+        case 'SET_RUNE_PAGE': {
+          const rawId = msg.payload?.pageId ?? msg.payload?.id;
+          const pageId = Number(rawId);
+          if (rawId === undefined || rawId === null || isNaN(pageId)) {
+            throw new Error('Valid pageId (or id) is required for SET_RUNE_PAGE');
+          }
+          const result = await this.lcuClient.setCurrentRunePage(pageId);
+          const resMsg: OutboundActionResultMessage = {
+            type: 'ACTION_RESULT',
+            timestamp: Date.now(),
+            replyTo: replyId,
+            payload: { success: true, action: 'SET_RUNE_PAGE', data: result },
+          };
+          this.sendTo(ws, resMsg);
+          break;
+        }
+
         case 'ACTION_CUSTOM': {
           const { method, endpoint, body } = msg.payload || {};
           if (!method || !endpoint) {
@@ -433,7 +483,7 @@ export class BridgeServer {
   private async handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     const origin = this.options.corsOrigin || '*';
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
@@ -547,6 +597,50 @@ export class BridgeServer {
         return;
       }
 
+      // Champ Select Summoner Spells endpoint
+      if (req.method === 'POST' && pathname === '/api/champ-select/spells') {
+        const body = await this.readJsonBody(req);
+        const { spell1Id, spell2Id } = body || {};
+        if (
+          spell1Id === undefined ||
+          spell2Id === undefined ||
+          isNaN(Number(spell1Id)) ||
+          isNaN(Number(spell2Id))
+        ) {
+          this.jsonResponse(res, 400, {
+            error: 'Both spell1Id and spell2Id are required and must be numbers',
+          });
+          return;
+        }
+        const result = await this.lcuClient.setSummonerSpells(Number(spell1Id), Number(spell2Id));
+        this.jsonResponse(res, 200, { success: true, result });
+        return;
+      }
+
+      // Rune Pages list endpoint
+      if (req.method === 'GET' && (pathname === '/api/perks/pages' || pathname === '/api/runes/pages')) {
+        const pages = await this.lcuClient.getRunePages();
+        this.jsonResponse(res, 200, { success: true, pages, data: pages });
+        return;
+      }
+
+      // Switch active Rune Page endpoint
+      if (
+        (req.method === 'POST' || req.method === 'PUT') &&
+        (pathname === '/api/perks/current-page' || pathname === '/api/runes/current-page')
+      ) {
+        const body = await this.readJsonBody(req);
+        const rawId = body?.pageId ?? body?.id;
+        const pageId = Number(rawId);
+        if (rawId === undefined || rawId === null || isNaN(pageId)) {
+          this.jsonResponse(res, 400, { error: 'pageId (or id) is required and must be a number' });
+          return;
+        }
+        const result = await this.lcuClient.setCurrentRunePage(pageId);
+        this.jsonResponse(res, 200, { success: true, pageId, result });
+        return;
+      }
+
       // Raw / Direct Champ Select Action endpoint
       if (req.method === 'POST' && pathname === '/api/champ-select/action') {
         const body = await this.readJsonBody(req);
@@ -604,7 +698,7 @@ export class BridgeServer {
     const httpUrl = `http://${primaryIp}:${this.options.port}`;
 
     return `<!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -723,40 +817,40 @@ export class BridgeServer {
       </div>
       <div id="lcuBadge" class="badge disconnected">
         <span class="dot"></span>
-        <span id="lcuStatusText">LCU Disconnesso</span>
+        <span id="lcuStatusText">LCU Disconnected</span>
       </div>
     </header>
 
     <div class="grid">
       <div class="card">
-        <h2>Connessione LAN Mobile</h2>
-        <div class="value">Endpoint WebSocket</div>
+        <h2>Mobile LAN Connection</h2>
+        <div class="value">WebSocket Endpoint</div>
         <div class="code-pill" id="wsEndpoint">${wsUrl}</div>
         <div style="margin-top: 8px; color: var(--text-muted); font-size: 0.8rem;">
-          Inserisci questo indirizzo nell'app mobile (iOS/Android).
+          Enter this address in your mobile app (iOS/Android).
         </div>
       </div>
 
       <div class="card">
-        <h2>Fase Gameflow Riot</h2>
+        <h2>Riot Gameflow Phase</h2>
         <div class="value" id="gameflowPhase" style="color: var(--accent-gold);">None</div>
         <div style="font-size: 0.85rem; color: var(--text-muted);">
-          Client connessi LAN: <strong id="activeClients" style="color: #fff;">0</strong>
+          LAN connected clients: <strong id="activeClients" style="color: #fff;">0</strong>
         </div>
       </div>
 
       <div class="card">
-        <h2>Azioni Rapide di Test</h2>
+        <h2>Quick Test Actions</h2>
         <div class="btn-row">
-          <button class="accept" onclick="acceptMatch()">Accetta Coda</button>
-          <button onclick="refreshState()">Aggiorna Stato</button>
+          <button class="accept" onclick="acceptMatch()">Accept Queue</button>
+          <button onclick="refreshState()">Refresh State</button>
         </div>
       </div>
     </div>
 
     <div class="logs-card">
-      <h2>Stato Real-Time Sessione (JSON)</h2>
-      <pre id="stateDump">In attesa di dati...</pre>
+      <h2>Real-Time Session State (JSON)</h2>
+      <pre id="stateDump">Waiting for data...</pre>
     </div>
   </div>
 
@@ -774,10 +868,10 @@ export class BridgeServer {
         if (msg.type === 'BRIDGE_STATUS') {
           if (msg.payload.isLcuConnected) {
             badge.className = 'badge connected';
-            badgeText.textContent = 'LCU Connesso (Porta ' + msg.payload.lcuPort + ')';
+            badgeText.textContent = 'LCU Connected (Port ' + msg.payload.lcuPort + ')';
           } else {
             badge.className = 'badge disconnected';
-            badgeText.textContent = 'LCU Disconnesso (In attesa del Client)';
+            badgeText.textContent = 'LCU Disconnected (Waiting for Client)';
           }
           clientsEl.textContent = msg.payload.activeClients;
           gameflowEl.textContent = msg.payload.currentPhase;
@@ -793,9 +887,9 @@ export class BridgeServer {
       try {
         const res = await fetch('/api/matchmaking/accept', { method: 'POST' });
         const data = await res.json();
-        alert('Risposta LCU: ' + JSON.stringify(data));
+        alert('LCU Response: ' + JSON.stringify(data));
       } catch (err) {
-        alert('Errore: ' + err.message);
+        alert('Error: ' + err.message);
       }
     }
 
@@ -805,7 +899,7 @@ export class BridgeServer {
         const data = await res.json();
         stateDump.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        stateDump.textContent = 'Errore: ' + err.message;
+        stateDump.textContent = 'Error: ' + err.message;
       }
     }
   </script>

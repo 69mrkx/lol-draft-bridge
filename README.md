@@ -65,6 +65,8 @@ Includes native **Windows System Tray** integration for quiet background executi
   - Accept or decline matchmaking ready-checks.
   - Hover champion pick intent.
   - Lock in champion picks and bans.
+  - Select Summoner Spells in real time during Champ Select.
+  - Retrieve and switch active Rune Pages instantly.
   - Direct custom LCU request tunneling.
 - 🖥️ **Windows System Tray Integration:** Sits quietly in the Windows notification area with a quick menu to inspect LCU status, copy LAN IP, open web dashboard, and safely exit.
 - 📊 **Built-in Web Pairing Dashboard:** Web-based control panel at `http://<LAN_IP>:3589/` for quick diagnostic tests and mobile setup.
@@ -112,7 +114,7 @@ Includes native **Windows System Tray** integration for quiet background executi
 Double-click `Start-Bridge-Hidden.vbs`.
 - The bridge starts silently in the background without keeping a console window open.
 - A golden icon appears in the Windows System Tray (Taskbar Notification Area).
-- Right-click the tray icon to view connection details, launch the web dashboard, or click **"Spegni Bridge (Exit)"** to shut it down.
+- Right-click the tray icon to view connection details, launch the web dashboard, or click **"Shutdown Bridge (Exit)"** to shut it down.
 
 ### Method 2: Interactive Terminal
 Run:
@@ -181,6 +183,9 @@ All messages are JSON objects. Inbound messages from mobile clients may include 
 | `ACTION_PICK` | `{"championId": 103, "completed": true}` | Locks in (or hovers) champion pick. |
 | `ACTION_BAN` | `{"championId": 84, "completed": true}` | Locks in champion ban. |
 | `ACTION_INTENT` | `{"championId": 103}` | Hovers champion pick intent. |
+| `ACTION_SPELLS` | `{"spell1Id": 4, "spell2Id": 7}` | Updates local player summoner spells in Champ Select. |
+| `GET_RUNE_PAGES` | `{}` | Retrieves all rune pages from LCU perks API. |
+| `SET_RUNE_PAGE` | `{"pageId": 54}` or `{"id": 54}` | Switches the active rune page in LCU. |
 
 #### Outbound Events (Bridge -> Mobile)
 
@@ -210,7 +215,10 @@ The bridge exposes HTTP REST endpoints on the same port:
 | `POST` | `/api/champ-select/pick` | Body: `{"championId": number, "completed"?: boolean}` |
 | `POST` | `/api/champ-select/ban` | Body: `{"championId": number, "completed"?: boolean}` |
 | `POST` | `/api/champ-select/intent` | Body: `{"championId": number}` |
+| `POST` | `/api/champ-select/spells` | Body: `{"spell1Id": number, "spell2Id": number}` |
 | `POST` | `/api/champ-select/action` | Body: `{"actionId": number, "championId": number, "completed"?: boolean}` |
+| `GET` | `/api/perks/pages` | Retrieves all rune pages (alias: `/api/runes/pages`) |
+| `POST` | `/api/perks/current-page` | Body: `{"pageId": number}` (alias: `/api/runes/current-page`) |
 
 ---
 

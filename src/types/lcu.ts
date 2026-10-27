@@ -88,3 +88,15 @@ export interface LcuWsEventPayload<T = any> {
   eventType: 'Create' | 'Update' | 'Delete' | string;
   uri: string;
 }
+
+export interface LcuRunePage {
+  id: number;
+  name: string;
+  isEditable: boolean;
+  isActive?: boolean;
+  current?: boolean;
+  primaryStyleId: number;
+  subStyleId: number;
+  selectedPerkIds: number[];
+  [key: string]: any;
+}

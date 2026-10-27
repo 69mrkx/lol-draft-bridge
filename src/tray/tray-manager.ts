@@ -42,13 +42,13 @@ export class TrayManager {
     };
 
     this.itemLcuStatus = {
-      title: '⚡ LCU: In attesa del Client...',
+      title: '⚡ LCU: Waiting for Client...',
       tooltip: 'League Client Status',
       enabled: false,
     };
 
     this.itemPhase = {
-      title: '🎯 Fase: None',
+      title: '🎯 Phase: None',
       tooltip: 'Gameflow Phase',
       enabled: false,
     };
@@ -58,7 +58,7 @@ export class TrayManager {
     };
 
     this.itemOpenDashboard = {
-      title: '🖥️ Apri Web Dashboard',
+      title: '🖥️ Open Web Dashboard',
       tooltip: 'Open Web Dashboard in default browser',
       enabled: true,
     };
@@ -67,12 +67,12 @@ export class TrayManager {
     };
 
     this.itemExit = {
-      title: '❌ Spegni Bridge (Exit)',
+      title: '❌ Shutdown Bridge (Exit)',
       tooltip: 'Stop server and exit',
       enabled: true,
     };
     (this.itemExit as any).click = () => {
-      console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
+      console.log('\x1b[33m[Tray]\x1b[0m Bridge shutdown requested from system menu...');
       this.options.onExit();
     };
   }
@@ -101,7 +101,7 @@ export class TrayManager {
         menu: {
           icon: iconBase64,
           title: 'LoL Draft Bridge',
-          tooltip: 'LoL Draft Bridge - In esecuzione',
+          tooltip: 'LoL Draft Bridge - Running',
           items: menuItems,
         },
         debug: false,
@@ -145,7 +145,7 @@ export class TrayManager {
           action.item === this.itemExit ||
           (action.item as any)?.__id === (this.itemExit as any)?.__id
         ) {
-          console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
+          console.log('\x1b[33m[Tray]\x1b[0m Bridge shutdown requested from system menu...');
           this.options.onExit();
           return;
         }
@@ -155,15 +155,17 @@ export class TrayManager {
         if (
           clickedTitle === this.itemOpenDashboard.title ||
           clickedTitle === this.itemLan.title ||
+          clickedTitle.includes('Open Web Dashboard') ||
           clickedTitle.includes('Apri Web Dashboard') ||
           clickedTitle.includes('LAN:')
         ) {
           this.openDashboardInBrowser();
         } else if (
           clickedTitle === this.itemExit.title ||
+          clickedTitle.includes('Shutdown Bridge') ||
           clickedTitle.includes('Spegni Bridge')
         ) {
-          console.log('\x1b[33m[Tray]\x1b[0m Spegnimento del bridge richiesto dal menu di sistema...');
+          console.log('\x1b[33m[Tray]\x1b[0m Bridge shutdown requested from system menu...');
           this.options.onExit();
         }
       });
@@ -175,15 +177,15 @@ export class TrayManager {
       if (this.options.lcuClient.isConnected && this.options.lcuClient.currentCredentials) {
         this.updateItem(
           this.itemLcuStatus,
-          `⚡ LCU: Connesso (Porta ${this.options.lcuClient.currentCredentials.port})`
+          `⚡ LCU: Connected (Port ${this.options.lcuClient.currentCredentials.port})`
         );
       }
       if (this.options.lcuClient.currentGameflow !== 'None') {
-        this.updateItem(this.itemPhase, `🎯 Fase: ${this.options.lcuClient.currentGameflow}`);
+        this.updateItem(this.itemPhase, `🎯 Phase: ${this.options.lcuClient.currentGameflow}`);
       }
     } catch (err: any) {
       this.isReady = false;
-      console.warn('[Tray] System Tray non inizializzato o non disponibile in questo ambiente. Continuazione in console.', err?.message || err);
+      console.warn('[Tray] System Tray not initialized or unavailable in this environment. Continuing in console.', err?.message || err);
     }
   }
 
@@ -218,16 +220,16 @@ export class TrayManager {
     const lcu = this.options.lcuClient;
 
     lcu.on('connected', (creds) => {
-      this.updateItem(this.itemLcuStatus, `⚡ LCU: Connesso (Porta ${creds.port})`);
+      this.updateItem(this.itemLcuStatus, `⚡ LCU: Connected (Port ${creds.port})`);
     });
 
     lcu.on('disconnected', () => {
-      this.updateItem(this.itemLcuStatus, '⚡ LCU: Disconnesso');
-      this.updateItem(this.itemPhase, '🎯 Fase: None');
+      this.updateItem(this.itemLcuStatus, '⚡ LCU: Disconnected');
+      this.updateItem(this.itemPhase, '🎯 Phase: None');
     });
 
     lcu.on('gameflow', (phase) => {
-      this.updateItem(this.itemPhase, `🎯 Fase: ${phase}`);
+      this.updateItem(this.itemPhase, `🎯 Phase: ${phase}`);
     });
   }
 
@@ -250,11 +252,11 @@ export class TrayManager {
 
   private openDashboardInBrowser(): void {
     const url = `http://localhost:${this.options.port}`;
-    console.log(`\x1b[36m[Tray]\x1b[0m Apertura Web Dashboard nel browser predefinito: ${url}`);
+    console.log(`\x1b[36m[Tray]\x1b[0m Opening Web Dashboard in default browser: ${url}`);
     const cmd = process.platform === 'win32' ? `start "" "${url}"` : `open "${url}"`;
     exec(cmd, (err) => {
       if (err) {
-        console.error('\x1b[31m[Tray]\x1b[0m Impossibile aprire il browser:', err.message);
+        console.error('\x1b[31m[Tray]\x1b[0m Failed to open browser:', err.message);
       }
     });
   }
